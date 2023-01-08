@@ -1,28 +1,21 @@
-use crossterm::{
-    event::{poll, read, Event::*, KeyCode},
-    terminal, Result,
-};
-use std::time::Duration;
+use crossterm::{event::Event::*, terminal, Result};
+mod editor;
+mod input;
+mod keyboard;
+mod output;
+use editor::*;
+use input::*;
+use output::*;
 
 fn main() -> Result<()> {
     terminal::enable_raw_mode()?;
+    let mut editor = Editor::new()?;
     loop {
-        let mut c = None;
-        if let Ok(true) = poll(Duration::from_millis(100)) {
-            if let Ok(event) = read() {
-                if let Key(key_event) = event {
-                    c = Some(key_event);
-                }
-            }
+        if refresh_screen().is_err() {
+            die("Unabled to refresh screen")
         }
-        if let Some(c) = c {
-            if c.code == KeyCode::Char('q') {
-                break;
-            } else {
-                println!("{c:?}\r");
-            }
-        } else {
-            println!("no key\r")
+        if process_keypress() {
+            break;
         }
     }
     terminal::disable_raw_mode()?;
